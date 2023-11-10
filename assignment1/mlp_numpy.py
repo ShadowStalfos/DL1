@@ -52,7 +52,14 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        self.layers = []
+        input = n_inputs
+        for output in n_hidden:
+            self.layers.append(LinearModule(input, output))
+            self.layers.append(ELUModule())
+            input = output
+        self.layers.append(LinearModule(input, n_classes))
+        self.layers.append(SoftMaxModule())
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -71,10 +78,9 @@ class MLP(object):
         Implement forward pass of the network.
         """
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
+        for layer in self.layers:
+            x = layer.forward(x)
+        out = x
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -95,7 +101,8 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        for layer in self.layers.reverse():
+            dout = layer.backward(dout)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -112,7 +119,8 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        for layer in self.layers:
+            layer.clear_cache()
         #######################
         # END OF YOUR CODE    #
         #######################

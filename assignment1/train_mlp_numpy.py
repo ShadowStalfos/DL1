@@ -48,7 +48,9 @@ def confusion_matrix(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
+    conf_mat = np.zeros(predictions.shape[1], predictions.shape[1])
+    for datapoint, target in zip(predictions, targets):
+        conf_mat[np.amax(datapoint), target] += 1
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -69,6 +71,12 @@ def confusion_matrix_to_metrics(confusion_matrix, beta=1.):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    cm = confusion_matrix
+    metrics = {}
+    metrics["accuracy"] = np.trace(cm)/np.sum(cm, (0,1))
+    metrics["precision"] = cm.diagonal()/np.sum(cm, axis=0)
+    metrics["recall"] = cm.diagonal()/np.sum(cm, axis=1)
+    metrics["f1_beta"] = ((1+beta**2)*(metrics["precision"]*metrics["recall"])/(beta**2*metrics["precision"]+metrics["recall"]))
 
     #######################
     # END OF YOUR CODE    #
@@ -96,7 +104,7 @@ def evaluate_model(model, data_loader, num_classes=10):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
+    model.forward(data_loader)
     #######################
     # END OF YOUR CODE    #
     #######################
