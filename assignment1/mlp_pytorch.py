@@ -59,7 +59,19 @@ class MLP(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        self.layers = []
+        input = n_inputs
+        for output in n_hidden:
+            self.layers.append(nn.Linear(input, output))
+            if use_batch_norm:
+                self.layers.append(nn.BatchNorm1d(output))
+            self.layers.append(nn.ELU())
+            input = output
+        self.layers.append(nn.Linear(input, n_classes))
+        """self.linearlayer1 = nn.Linear(n_inputs, n_hidden[0])
+        self.elu1 = nn.ELU()
+
+        self.linlayer2 = nn.Linear(n_hidden[0], n_classes)"""
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -81,7 +93,10 @@ class MLP(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-
+        out = self.linlayer2(self.elu1(self.linlayer1(x)))
+        """for layer in self.layers:
+            x = layer(x)
+        out = x"""
         #######################
         # END OF YOUR CODE    #
         #######################

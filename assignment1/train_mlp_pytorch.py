@@ -28,6 +28,7 @@ from copy import deepcopy
 from tqdm.auto import tqdm
 from mlp_pytorch import MLP
 import cifar10_utils
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -49,7 +50,9 @@ def confusion_matrix(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
+    conf_mat = np.zeros((predictions.shape[1], predictions.shape[1]))
+    for datapoint, target in zip(predictions, targets):
+        conf_mat[np.argmax(datapoint), int(target-1)] += 1
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -70,7 +73,12 @@ def confusion_matrix_to_metrics(confusion_matrix, beta=1.):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
+    cm = confusion_matrix
+    metrics = {}
+    metrics["accuracy"] = np.trace(cm)/np.sum(cm, (0,1))
+    metrics["precision"] = cm.diagonal()/np.sum(cm, axis=0)
+    metrics["recall"] = cm.diagonal()/np.sum(cm, axis=1)
+    metrics["f1_beta"] = ((1+beta**2)*(metrics["precision"]*metrics["recall"])/(beta**2*metrics["precision"]+metrics["recall"]))
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -97,7 +105,16 @@ def evaluate_model(model, data_loader, num_classes=10):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
+    model.eval()
+    data_iter = iter(data_loader)
+    preds = np.empty((0, num_classes))
+    t = np.array([])
+    for data, target in data_iter:
+        preds = np.vstack((preds, model.forward(data.reshape(-1, 3072))))
+        t = np.hstack((t,target))
+    cm = confusion_matrix(preds, t)
+    metrics = confusion_matrix_to_metrics(cm)
+    model.train()
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -159,20 +176,44 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     #######################
 
     # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
+    model = MLP(3072, hidden_dims, 10, use_batch_norm)
+    #model.to(device)
+    loss_module = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
     # TODO: Training loop including validation
-    # TODO: Do optimization with the simple SGD optimizer
-    val_accuracies = ...
+    logging_dict = {"Losses": []}
+    val_accuracies = []
+
+    for epoch in range(epochs):
+        print(epoch)
+        model.train()
+        train_iter = iter(cifar10_loader["train"])
+        current_loss = 0
+        for data, targets in train_iter:
+            data, targets = data.reshape(-1, 3072).to(device), targets.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(data)
+
+            loss = loss_module(outputs, targets)
+            loss.backward()
+            current_loss += loss.item()
+
+            optimizer.step()
+
+        logging_dict["Losses"].append(current_loss)
+        val_accuracies.append(evaluate_model(model, cifar10_loader["validation"], 10)["accuracy"])
+        
     # TODO: Test best model
-    test_accuracy = ...
+    test_accuracy = evaluate_model(model, cifar10_loader["test"], 10)["accuracy"]
     # TODO: Add any information you might want to save for plotting
-    logging_info = ...
+
     #######################
     # END OF YOUR CODE    #
     #######################
 
-    return model, val_accuracies, test_accuracy, logging_info
+    return model, val_accuracies, test_accuracy, logging_dict
 
 
 if __name__ == '__main__':
@@ -202,6 +243,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     kwargs = vars(args)
 
-    train(**kwargs)
+    model, val_accuracies, test_accuracy, logging_dict = train(**kwargs)
+    print(test_accuracy)
+    plt.plot(logging_dict["Losses"])
+    plt.xlabel("Epoch")
+    plt.ylabel("Total Loss")
+    plt.title("Total loss of training data of model per epoch")
+    plt.show()
     # Feel free to add any additional functions, such as plotting of the loss curve here
     
