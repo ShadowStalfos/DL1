@@ -101,7 +101,7 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        for layer in self.layers.reverse():
+        for layer in self.layers[::-1]:
             dout = layer.backward(dout)
         #######################
         # END OF YOUR CODE    #

@@ -28,6 +28,8 @@ from tqdm.auto import tqdm
 from copy import deepcopy
 from mlp_numpy import MLP
 from modules import CrossEntropyModule
+from modules import LinearModule
+import matplotlib.pyplot as plt
 import cifar10_utils
 
 import torch
@@ -48,9 +50,9 @@ def confusion_matrix(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    conf_mat = np.zeros(predictions.shape[1], predictions.shape[1])
+    conf_mat = np.zeros((predictions.shape[1], predictions.shape[1]))
     for datapoint, target in zip(predictions, targets):
-        conf_mat[np.amax(datapoint), target] += 1
+        conf_mat[np.argmax(datapoint), int(target-1)] += 1
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -104,7 +106,15 @@ def evaluate_model(model, data_loader, num_classes=10):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    model.forward(data_loader)
+    model.clear_cache()
+    data_iter = iter(data_loader)
+    preds = np.empty((0, num_classes))
+    t = np.array([])
+    for data, target in data_iter:
+        preds = np.vstack((preds, model.forward(data.reshape(-1, 3072))))
+        t = np.hstack((t,target))
+    cm = confusion_matrix(preds, t)
+    metrics = confusion_matrix_to_metrics(cm)
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -156,16 +166,31 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
     # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
+    model = MLP(3072, hidden_dims, 10)
+    loss_module = CrossEntropyModule()
+
     # TODO: Training loop including validation
-    val_accuracies = ...
+    logging_dict = {"Losses": []}
+    val_accuracies = []
+    for epoch in range(epochs):
+        train_iter = iter(cifar10_loader["train"])
+        model.clear_cache()
+        loss = 0
+        for data, targets in train_iter:
+            out = model.forward(data.reshape(-1, 3072))
+            loss += loss_module.forward(out, targets-1)
+            model.backward(loss_module.backward(out, targets-1))
+            for layer in model.layers:
+                if isinstance(layer, LinearModule):
+                  layer.params["weight"] -= lr*layer.grads["weight"]
+                  layer.params["bias"] -= lr*layer.grads["bias"]
+        logging_dict["Losses"].append(loss)
+        val_accuracies.append(evaluate_model(model, cifar10_loader["validation"], 10)["accuracy"])
     # TODO: Test best model
-    test_accuracy = ...
+    test_accuracy = evaluate_model(model, cifar10_loader["test"], 10)["accuracy"]
     # TODO: Add any information you might want to save for plotting
-    logging_info = ...
+     
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -197,7 +222,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     kwargs = vars(args)
-
-    train(**kwargs)
+    model, val_accuracies, test_accuracy, logging_dict = train(**kwargs)
+    print(test_accuracy)
+    plt.plot(logging_dict["Losses"])
+    plt.xlabel("Epoch")
+    plt.ylabel("Total Loss")
+    plt.title("Total loss of training data of model per epoch")
+    plt.show()
     # Feel free to add any additional functions, such as plotting of the loss curve here
     

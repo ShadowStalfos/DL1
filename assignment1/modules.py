@@ -103,7 +103,7 @@ class LinearModule(object):
         # PUT YOUR CODE HERE  #
         #######################
         self.grads["weight"] = np.dot(self.input.T, dout)
-        self.grads["bias"] = dout.T
+        self.grads["bias"] = np.dot(dout.T, np.ones(dout.shape[0]))
         dx = np.dot(dout, self.params["weight"].T)
         #######################
         # END OF YOUR CODE    #
@@ -219,12 +219,7 @@ class SoftMaxModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        """self.input = x
-        total = np.sum(np.exp(x), axis=0)
-        self.out = np.exp(x)/total
-        out = self.out"""
-        shifted_logits = x - np.max(x, axis=1, keepdims=True)
-        exp_scores = np.exp(shifted_logits)
+        exp_scores = np.exp(x)
         self.out = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
         out = self.out
         #######################
@@ -296,10 +291,7 @@ class CrossEntropyModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        losses = []
-        for index, label in enumerate(y):
-            losses.append(-np.log(x[index, label]))
-        out = np.mean(losses)
+        out = np.mean(-np.log(x[range(len(y)),y]))
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -322,11 +314,8 @@ class CrossEntropyModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        dx = []
-        for i in range(x.shape[0]):
-            dxi = np.zeros(x.shape[1])
-            dxi[y[i]] = (-1/x[i, y[i]])/x.shape[0]
-            dx.append(list(dxi))
+        dx = np.zeros(x.shape)
+        dx[range(len(y)), y] = (-1/x[range(len(y)),y])/x.shape[0]
         #######################
         # END OF YOUR CODE    #
         #######################
