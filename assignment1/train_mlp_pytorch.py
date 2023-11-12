@@ -105,6 +105,7 @@ def evaluate_model(model, data_loader, num_classes=10):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    model.eval()
     with torch.no_grad():
       data_iter = iter(data_loader)
       preds = np.empty((0, num_classes))
@@ -114,6 +115,7 @@ def evaluate_model(model, data_loader, num_classes=10):
           t = np.hstack((t,target))
       cm = confusion_matrix(preds, t)
       metrics = confusion_matrix_to_metrics(cm)
+    model.train()
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -184,9 +186,8 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     best_acc = 0
     logging_dict = {"Losses": []}
     val_accuracies = []
+    model.train()
     for epoch in range(epochs):
-        print(epoch)
-        model.train()
         train_iter = iter(cifar10_loader["train"])
         current_loss = 0
         for data, targets in train_iter:
@@ -206,7 +207,6 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
         if val_accuracies[-1]>best_acc:
             best_acc = val_accuracies[-1]
             best_model = deepcopy(model)
-        print(val_accuracies[-1])
         
     # TODO: Test best model
     test_accuracy = evaluate_model(best_model, cifar10_loader["test"], 10)["accuracy"]

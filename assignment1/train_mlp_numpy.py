@@ -192,7 +192,7 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
             best_acc = val_accuracies[-1]
             best_model = deepcopy(model)
     # TODO: Test best model
-    test_accuracy = evaluate_model(model, cifar10_loader["test"], 10)["accuracy"]
+    test_accuracy = evaluate_model(best_model, cifar10_loader["test"], 10)["accuracy"]
     # TODO: Add any information you might want to save for plotting
      
     #######################
