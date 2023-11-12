@@ -180,7 +180,7 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     model = MLP(3072, hidden_dims, 10, use_batch_norm)
     model.to(device)
     loss_module = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     # TODO: Training loop including validation
     best_acc = 0
