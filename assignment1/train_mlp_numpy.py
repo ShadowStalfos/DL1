@@ -173,6 +173,7 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     # TODO: Training loop including validation
     logging_dict = {"Losses": []}
     val_accuracies = []
+    best_acc = 0
     for epoch in range(epochs):
         train_iter = iter(cifar10_loader["train"])
         model.clear_cache()
@@ -187,6 +188,9 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
                   layer.params["bias"] -= lr*layer.grads["bias"]
         logging_dict["Losses"].append(loss)
         val_accuracies.append(evaluate_model(model, cifar10_loader["validation"], 10)["accuracy"])
+        if val_accuracies[-1]>best_acc:
+            best_acc = val_accuracies[-1]
+            best_model = deepcopy(model)
     # TODO: Test best model
     test_accuracy = evaluate_model(model, cifar10_loader["test"], 10)["accuracy"]
     # TODO: Add any information you might want to save for plotting

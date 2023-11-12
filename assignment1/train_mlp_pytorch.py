@@ -51,7 +51,7 @@ def confusion_matrix(predictions, targets):
     # PUT YOUR CODE HERE  #
     #######################
     conf_mat = np.zeros((predictions.shape[1], predictions.shape[1]))
-    for i, j in zip(np.argmax(predictions, axis=1), targets.astype(int)-1):
+    for i, j in zip(np.argmax(predictions, axis=1), targets.astype(int)):
       conf_mat[i,j] += 1
     #######################
     # END OF YOUR CODE    #
@@ -78,9 +78,6 @@ def confusion_matrix_to_metrics(confusion_matrix, beta=1.):
     metrics["accuracy"] = np.trace(cm)/np.sum(cm, (0,1))
     metrics["precision"] = (cm.diagonal())/np.sum(cm, axis=0)
     metrics["recall"] = (cm.diagonal())/np.sum(cm, axis=1)
-
-    print(metrics["precision"])
-    print(metrics["recall"])
     metrics["f1_beta"] = ((1+beta**2)*(metrics["precision"]*metrics["recall"])/(beta**2*metrics["precision"]+metrics["recall"]))
     #######################
     # END OF YOUR CODE    #
@@ -181,9 +178,10 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     model = MLP(3072, hidden_dims, 10, use_batch_norm)
     model.to(device)
     loss_module = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
     # TODO: Training loop including validation
+    best_acc = 0
     logging_dict = {"Losses": []}
     val_accuracies = []
     for epoch in range(epochs):
@@ -196,7 +194,7 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
 
             optimizer.zero_grad()
             outputs = model(data)
-            loss = torch.nn.CrossEntropyLoss()(outputs, targets)
+            loss = loss_module(outputs, targets)
             loss.backward()
 
             optimizer.step()
@@ -205,10 +203,13 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
 
         logging_dict["Losses"].append(current_loss)
         val_accuracies.append(evaluate_model(model, cifar10_loader["validation"], 10)["accuracy"])
+        if val_accuracies[-1]>best_acc:
+            best_acc = val_accuracies[-1]
+            best_model = deepcopy(model)
         print(val_accuracies[-1])
         
     # TODO: Test best model
-    test_accuracy = evaluate_model(model, cifar10_loader["test"], 10)["accuracy"]
+    test_accuracy = evaluate_model(best_model, cifar10_loader["test"], 10)["accuracy"]
     # TODO: Add any information you might want to save for plotting
 
     #######################
