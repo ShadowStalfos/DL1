@@ -103,7 +103,7 @@ class LinearModule(object):
         # PUT YOUR CODE HERE  #
         #######################
         self.grads["weight"] = np.dot(self.input.T, dout)
-        self.grads["bias"] = np.dot(dout.T, np.ones(dout.shape[0]))
+        self.grads["bias"] = np.dot(np.ones(dout.shape[0]).T, dout)
         dx = np.dot(dout, self.params["weight"].T)
         #######################
         # END OF YOUR CODE    #

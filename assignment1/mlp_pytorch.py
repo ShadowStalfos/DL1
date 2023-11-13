@@ -70,7 +70,9 @@ class MLP(nn.Module):
                 self.layers.append(nn.BatchNorm1d(output))
             self.layers.append(nn.ELU())
             input = output
-        self.layers.append(nn.Linear(input, n_classes))
+        layer = nn.Linear(input, n_classes)
+        nn.init.kaiming_normal_(layer.weight)
+        self.layers.append(layer)
         
         """self.linlayer1 = nn.Linear(n_inputs, n_hidden[0])
         self.elu1 = nn.ELU()

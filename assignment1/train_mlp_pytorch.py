@@ -85,7 +85,7 @@ def confusion_matrix_to_metrics(confusion_matrix, beta=1.):
     return metrics
 
 
-def evaluate_model(model, data_loader, num_classes=10):
+def evaluate_model(model, data_loader, num_classes=10, beta=1):
     """
     Performs the evaluation of the MLP model on a given dataset.
 
@@ -114,13 +114,19 @@ def evaluate_model(model, data_loader, num_classes=10):
           preds = np.vstack((preds, model.forward(data.reshape(-1, 3072)).detach().numpy()))
           t = np.hstack((t,target))
       cm = confusion_matrix(preds, t)
-      metrics = confusion_matrix_to_metrics(cm)
+      metrics = confusion_matrix_to_metrics(cm, beta)
+      metrics["ConfMat"] = cm
     model.train()
     #######################
     # END OF YOUR CODE    #
     #######################
     return metrics
 
+def eval_f1_scores(model, dataloader):
+    scores = []
+    for beta in [0.1, 1, 10]:
+        scores.append(evaluate_model(model, dataloader, 10, beta)["f1_beta"])
+    return scores
 
 def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     """
@@ -187,6 +193,7 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     logging_dict = {"Losses": []}
     val_accuracies = []
     model.train()
+    evaluate_model(model, cifar10_loader["validation"], 10)
     for epoch in range(epochs):
         train_iter = iter(cifar10_loader["train"])
         current_loss = 0
@@ -209,7 +216,13 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
             best_model = deepcopy(model)
         
     # TODO: Test best model
-    test_accuracy = evaluate_model(best_model, cifar10_loader["test"], 10)["accuracy"]
+    test_eval = evaluate_model(best_model, cifar10_loader["test"], 10)
+    logging_dict["Recall"] = test_eval["recall"]
+    logging_dict["Precision"] = test_eval["precision"]
+    logging_dict["ConfMat"] =  test_eval["ConfMat"]
+
+    logging_dict["fscores"] = eval_f1_scores(model, cifar10_loader["test"])
+    test_accuracy = test_eval["accuracy"]
     # TODO: Add any information you might want to save for plotting
 
     #######################
@@ -247,11 +260,28 @@ if __name__ == '__main__':
     kwargs = vars(args)
 
     model, val_accuracies, test_accuracy, logging_dict = train(**kwargs)
-    print(test_accuracy)
+    print("Accuracy: "+str(test_accuracy))
+    print("Recall: "+str(logging_dict["Recall"]))
+    print("Precision: "+str(logging_dict["Precision"]))
+    print()
+    print("F_0.1 score: "+str(logging_dict["fscores"][0]))
+    print("F_1 score: "+str(logging_dict["fscores"][1]))
+    print("F_10 score: "+str(logging_dict["fscores"][2]))
     plt.plot(logging_dict["Losses"])
     plt.xlabel("Epoch")
     plt.ylabel("Total Loss")
     plt.title("Total loss of training data of model per epoch")
+    plt.show()
+
+    conf_mat = logging_dict["ConfMat"]
+    plt.matshow(conf_mat, cmap=plt.cm.hot, alpha=0.7)
+
+    for i in range(conf_mat.shape[0]):
+        for j in range(conf_mat.shape[1]):
+            plt.text(x=j, y=i,s=int(conf_mat[i, j]), va='center', ha='center')
+    plt.xlabel('True Class')
+    plt.ylabel('Predicted Class')
+    plt.title('Confusion Matrix')
     plt.show()
     # Feel free to add any additional functions, such as plotting of the loss curve here
     
