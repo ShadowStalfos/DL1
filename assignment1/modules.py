@@ -219,7 +219,8 @@ class SoftMaxModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        exp_scores = np.exp(x)
+        shifted_x = x - np.max(x)
+        exp_scores = np.exp(shifted_x)
         self.out = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
         out = self.out
         #######################
