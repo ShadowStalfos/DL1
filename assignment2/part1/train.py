@@ -52,10 +52,15 @@ def get_model(num_classes=100):
     #######################
 
     # Get the pretrained ResNet18 model on ImageNet from torchvision.models
-    pass
+    model = models.resnet18(weights="DEFAULT")
 
+    for param in model.parameters():
+        param.requires_grad = False
     # Randomly initialize and modify the model's last layer for CIFAR100.
-    pass
+    layer = nn.Linear(512, 100)
+    nn.init.normal_(layer.weight, 0, 0.01)
+
+    model.fc = layer
 
     #######################
     # END OF YOUR CODE    #
@@ -83,19 +88,46 @@ def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-
     # Load the datasets
-    pass
+    train_set, valid_set = get_train_validation_set(data_dir, augmentation_name=augmentation_name) 
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size = batch_size, shuffle=True)
+    valid_loader = torch.utils.data.DataLoader(valid_set, batch_size = batch_size, shuffle=True)
 
     # Initialize the optimizer (Adam) to train the last layer of the model.
-    pass
+    optimizer = torch.optim.Adam(model.parameters() , lr=lr)
 
     # Training loop with validation after each epoch. Save the best model.
-    pass
+    model.to(device)
+    loss_module = nn.CrossEntropyLoss()
+    best_acc = 0
+    model.train()
+
+    for epoch in range(epochs):
+        print(epoch)
+        train_iter = iter(train_loader)
+        current_loss = 0
+        batch_total = len(train_iter)
+        for batch_i, (data, targets) in enumerate(train_iter):
+            print("{:.2%}".format(batch_i/batch_total), end='\r')
+            data, targets = data.to(device), targets.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(data)
+            loss = loss_module(outputs, targets)
+            loss.backward()
+
+            optimizer.step()
+
+            current_loss += loss.item()
+
+        acc = evaluate_model(model, valid_loader, device)
+        if acc>best_acc:
+            best_acc = acc
+            torch.save(model, checkpoint_name)
 
     # Load the best model on val accuracy and return it.
-    pass
-
+    model = torch.load(checkpoint_name)
+    
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -119,12 +151,20 @@ def evaluate_model(model, data_loader, device):
     # PUT YOUR CODE HERE  #
     #######################
     # Set model to evaluation mode (Remember to set it back to training mode in the training loop)
-    pass
+    model.eval()
 
     # Loop over the dataset and compute the accuracy. Return the accuracy
     # Remember to use torch.no_grad().
-    pass
+    with torch.no_grad():
+        eval_iter = iter(data_loader)
+        correct = 0
+        for data, targets in eval_iter:
+            data, targets = data.to(device), targets.to(device)
+            outputs = model(data)
+            correct += np.sum(np.argmax(outputs, axis=1) == targets)
+    accuracy = correct/len(data_loader)
 
+    model.train()
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -148,23 +188,26 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name, test_noise):
     # PUT YOUR CODE HERE  #
     #######################
     # Set the seed for reproducibility
-    pass
+    set_seed(seed)
 
     # Set the device to use for training
-    pass
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load the model
-    pass
+    model = get_model()
 
     # Get the augmentation to use
-    pass
+    """weights = models.ResNet18_Weights.DEFAULT
+    preprocess = weights.transforms()"""
+    "Add the augmentations here"
 
     # Train the model
-    pass
+    best_model = train_model(model, lr, batch_size, epochs, data_dir, "best_model", device, augmentation_name)
 
     # Evaluate the model on the test set
-    pass
-
+    test_set = get_test_set(data_dir, test_noise)
+    accuracy = evaluate_model(best_model, test_set, device)
+    print("Final accuracy: "+str(accuracy))
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -179,7 +222,7 @@ if __name__ == '__main__':
                         help='Learning rate to use')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Minibatch size')
-    parser.add_argument('--epochs', default=30, type=int,
+    parser.add_argument('--epochs', default=2, type=int,
                         help='Max number of epochs')
     parser.add_argument('--seed', default=123, type=int,
                         help='Seed to use for reproducing results')
