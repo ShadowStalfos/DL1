@@ -94,7 +94,7 @@ def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device
     valid_loader = torch.utils.data.DataLoader(valid_set, batch_size = batch_size, shuffle=True)
 
     # Initialize the optimizer (Adam) to train the last layer of the model.
-    optimizer = torch.optim.Adam(model.parameters() , lr=lr)
+    optimizer = torch.optim.Adam(model.fc.parameters() , lr=lr)
 
     # Training loop with validation after each epoch. Save the best model.
     model.to(device)

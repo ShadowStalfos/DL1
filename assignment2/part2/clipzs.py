@@ -169,9 +169,15 @@ class ZeroshotCLIP(nn.Module):
         # Hint:
         # - Read the CLIP API documentation for more details:
         #   https://github.com/openai/CLIP#api
+        tokenized_prompts = clip.tokenize(prompts).to(device)
+        with torch.no_grad():
+            text_features = clip_model.encode_text(tokenized_prompts)
+        text_features /= text_features.norm(dim=-1, keepdim=True)
+        return text_features
+
 
         # remove this line once you implement the function
-        raise NotImplementedError("Implement the precompute_text_features function.")
+        #raise NotImplementedError("Implement the precompute_text_features function.")
 
         #######################
         # END OF YOUR CODE    #
@@ -208,9 +214,13 @@ class ZeroshotCLIP(nn.Module):
         # Hint:
         # - Read the CLIP API documentation for more details:
         #   https://github.com/openai/CLIP#api
-
+        with torch.no_grad():
+            image_features = self.clip_model.encode_image(image)
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+        similarity = self.clip_model.logit_scale*image_features @ self.text_features.T
+        return similarity
         # remove this line once you implement the function
-        raise NotImplementedError("Implement the model_inference function.")
+        #raise NotImplementedError("Implement the model_inference function.")
 
         #######################
         # END OF YOUR CODE    #
@@ -325,7 +335,7 @@ def main():
     _, preprocess = clip.load(args.arch)
     dataset = load_dataset(args.dataset, args.root, args.split, preprocess)
 
-    loader = DataLoader(
+    data_loader = DataLoader(
         dataset=dataset, batch_size=args.batch_size, num_workers=args.num_workers
     )
 
@@ -370,9 +380,19 @@ def main():
     # - Before filling this part, you should first complete the ZeroShotCLIP class
     # - Updating the accuracy meter is as simple as calling top1.update(accuracy, batch_size)
     # - You can use the model_inference method of the ZeroshotCLIP class to get the logits
-
+    data_iter = iter(data_loader)
+    total_batches = len(data_iter)
+    print(total_batches)
+    for batch_i, (data, targets) in enumerate(data_iter):
+        print("{:.2%}".format(batch_i/total_batches), end='\r')
+        outputs = clipzs.model_inference(data)
+        #print(np.argmax(outputs.detach().numpy(), axis=1) == targets.detach().numpy())
+        accuracy = np.sum(np.argmax(outputs.detach().numpy(), axis=1) == targets.detach().numpy())/len(targets)
+        top1.update(accuracy,len(targets))
+        if batch_i>20:
+            break
     # you can remove the following line once you have implemented the inference loop
-    raise NotImplementedError("Implement the inference loop")
+    #raise NotImplementedError("Implement the inference loop")
 
     #######################
     # END OF YOUR CODE    #
