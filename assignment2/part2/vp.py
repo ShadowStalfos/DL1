@@ -44,8 +44,10 @@ class FixedPatchPrompter(nn.Module):
         #     (3 for the RGB channels)
         # - You can define variable parameters using torch.nn.Parameter
         # - You can initialize the patch randomly in N(0, 1) using torch.randn
-
-        raise NotImplementedError
+        self.img_size = args.image_size
+        self.prompt_size = args.prompt_size
+        self.pixel_values = torch.nn.Parameter(torch.randn((1, 3, self.prompt_size, self.prompt_size)))
+        #raise NotImplementedError
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -61,7 +63,9 @@ class FixedPatchPrompter(nn.Module):
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
 
-        raise NotImplementedError
+        prompt = np.zeros((1, 3, self.img_size, self.img_size))
+        prompt[0, :, :self.prompt_size,:self.prompt_size] = self.pixel_values.detach().numpy()
+        return x + prompt
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -88,7 +92,7 @@ class PadPrompter(nn.Module):
         # - Shape of self.pad_up and self.pad_down should be (1, 3, pad_size, image_size)
         # - See Fig 2.(g)/(h) and think about the shape of self.pad_left and self.pad_right
 
-        raise NotImplementedError
+        self
         #######################
         # END OF YOUR CODE    #
         #######################

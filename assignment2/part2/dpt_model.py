@@ -84,7 +84,7 @@ class DeepPromptCLIP(nn.Module):
         # TODO: Initialize the learnable deep prompt.
         # Hint: consider the shape required for the deep prompt to be compatible with the CLIP model 
 
-        self.deep_prompt = 
+        #self.deep_prompt = 
 
         # remove this line once you implement the function
         raise NotImplementedError("Write the code to compute text features.")
