@@ -386,7 +386,7 @@ def main():
     for batch_i, (data, targets) in enumerate(data_iter):
         print("{:.2%}".format(batch_i/total_batches), end='\r')
         outputs = clipzs.model_inference(data)
-        #print(np.argmax(outputs.detach().numpy(), axis=1) == targets.detach().numpy())
+
         accuracy = np.sum(np.argmax(outputs.detach().numpy(), axis=1) == targets.detach().numpy())/len(targets)
         top1.update(accuracy,len(targets))
         if batch_i>20:

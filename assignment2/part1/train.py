@@ -57,7 +57,7 @@ def get_model(num_classes=100):
     for param in model.parameters():
         param.requires_grad = False
     # Randomly initialize and modify the model's last layer for CIFAR100.
-    layer = nn.Linear(512, 100)
+    layer = nn.Linear(512, num_classes)
     nn.init.normal_(layer.weight, 0, 0.01)
 
     model.fc = layer
@@ -94,7 +94,7 @@ def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device
     valid_loader = torch.utils.data.DataLoader(valid_set, batch_size = batch_size, shuffle=True)
 
     # Initialize the optimizer (Adam) to train the last layer of the model.
-    optimizer = torch.optim.Adam(model.fc.parameters() , lr=lr)
+    optimizer = torch.optim.Adam(model.parameters() , lr=lr)
 
     # Training loop with validation after each epoch. Save the best model.
     model.to(device)
@@ -106,9 +106,7 @@ def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device
         print(epoch)
         train_iter = iter(train_loader)
         current_loss = 0
-        batch_total = len(train_iter)
-        for batch_i, (data, targets) in enumerate(train_iter):
-            print("{:.2%}".format(batch_i/batch_total), end='\r')
+        for data, targets in train_iter:
             data, targets = data.to(device), targets.to(device)
 
             optimizer.zero_grad()
@@ -159,10 +157,11 @@ def evaluate_model(model, data_loader, device):
         eval_iter = iter(data_loader)
         correct = 0
         total = 0
+
         for data, targets in eval_iter:
             data, targets = data.to(device), targets.to(device)
             outputs = model(data)
-            correct += np.sum(np.argmax(outputs, axis=1) == targets)
+            correct += (torch.max(outputs.data, 1)[1] == targets).sum().item()
             total += len(targets)
     accuracy = correct/total
 
@@ -208,7 +207,8 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name, test_noise):
 
     # Evaluate the model on the test set
     test_set = get_test_set(data_dir, test_noise)
-    accuracy = evaluate_model(best_model, test_set, device)
+    test_loader = data.DataLoader(test_set, batch_size)
+    accuracy = evaluate_model(best_model, test_loader, device)
     print("Final accuracy: "+str(accuracy))
     #######################
     # END OF YOUR CODE    #
