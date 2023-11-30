@@ -30,7 +30,6 @@ class FixedPatchPrompter(nn.Module):
 
         assert isinstance(args.image_size, int), "image_size must be an integer"
         assert isinstance(args.prompt_size, int), "prompt_size must be an integer"
-
         #######################
         # PUT YOUR CODE HERE  #
         #######################
@@ -63,9 +62,8 @@ class FixedPatchPrompter(nn.Module):
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
 
-        prompt = np.zeros((1, 3, self.img_size, self.img_size))
-        prompt[0, :, :self.prompt_size,:self.prompt_size] = self.pixel_values.detach().numpy()
-        return x + prompt
+        x[:, :, :self.prompt_size,:self.prompt_size] += self.pixel_values
+        return x
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -92,7 +90,14 @@ class PadPrompter(nn.Module):
         # - Shape of self.pad_up and self.pad_down should be (1, 3, pad_size, image_size)
         # - See Fig 2.(g)/(h) and think about the shape of self.pad_left and self.pad_right
 
-        self
+        self.pad_up = torch.nn.Parameter(torch.randn((1, 3, pad_size, image_size)))
+        self.pad_down = torch.nn.Parameter(torch.randn((1, 3, pad_size, image_size)))
+
+        self.pad_left = torch.nn.Parameter(torch.randn((1, 3, image_size-2*pad_size, pad_size)))
+        self.pad_right = torch.nn.Parameter(torch.randn((1, 3, image_size-2*pad_size, pad_size)))
+
+        self.pad_size = pad_size
+        self.image_size = image_size
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -107,8 +112,11 @@ class PadPrompter(nn.Module):
         # - First define the prompt. Then add it to the batch of images.
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
-
-        raise NotImplementedError
+        x[:, :, :self.pad_size,:] += self.pad_up
+        x[:, :, self.image_size-self.pad_size:,:] += self.pad_down
+        x[:, :, self.pad_size:self.image_size-self.pad_size ,:self.pad_size] += self.pad_left
+        x[:, :, self.pad_size:self.image_size-self.pad_size,self.image_size-self.pad_size:] += self.pad_right
+        return x
         #######################
         # END OF YOUR CODE    #
         #######################
