@@ -52,7 +52,7 @@ def get_model(num_classes=100):
     #######################
 
     # Get the pretrained ResNet18 model on ImageNet from torchvision.models
-    model = models.resnet18(weights="DEFAULT")
+    model = models.resnet18()
 
     for param in model.parameters():
         param.requires_grad = False
@@ -158,11 +158,13 @@ def evaluate_model(model, data_loader, device):
     with torch.no_grad():
         eval_iter = iter(data_loader)
         correct = 0
+        total = 0
         for data, targets in eval_iter:
             data, targets = data.to(device), targets.to(device)
             outputs = model(data)
             correct += np.sum(np.argmax(outputs, axis=1) == targets)
-    accuracy = correct/len(data_loader)
+            total += len(targets)
+    accuracy = correct/total
 
     model.train()
     #######################
