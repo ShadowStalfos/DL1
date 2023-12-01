@@ -61,9 +61,10 @@ class FixedPatchPrompter(nn.Module):
         # - First define the prompt. Then add it to the batch of images.
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
-
-        x[:, :, :self.prompt_size,:self.prompt_size] += self.pixel_values
-        return x
+        prompt = torch.zeros(x.shape[0], 3, self.img_size, self.img_size)
+        prompt[:, :, :self.prompt_size,:self.prompt_size] = self.pixel_values
+        prompt = prompt.to(x.device)
+        return x+prompt
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -102,7 +103,7 @@ class PadPrompter(nn.Module):
         # END OF YOUR CODE    #
         #######################
 
-    def forward(self, x):
+    def forward(self, input):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
@@ -112,6 +113,7 @@ class PadPrompter(nn.Module):
         # - First define the prompt. Then add it to the batch of images.
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
+        x = input
         x[:, :, :self.pad_size,:] += self.pad_up
         x[:, :, self.image_size-self.pad_size:,:] += self.pad_down
         x[:, :, self.pad_size:self.image_size-self.pad_size ,:self.pad_size] += self.pad_left

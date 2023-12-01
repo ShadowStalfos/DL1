@@ -121,11 +121,10 @@ class VisualPromptCLIP(nn.Module):
         # - You need to multiply the similarity logits with the logit scale (clip_model.logit_scale).
         # - Return logits of shape (batch size, number of classes).
 
-        # remove this line once you implement the function
-        image = self.prompt_learner.forward(image)
-        with torch.no_grad():
-            image_features = self.clip_model.encode_image(image)
-        image_features /= image_features.norm(dim=-1, keepdim=True)
+        # remove this line once you implement the function\
+        prompt_image = self.prompt_learner.forward(image)
+        image_features = self.clip_model.encode_image(prompt_image)
+        image_features = image_features/image_features.norm(dim=-1, keepdim=True)
         similarity = self.clip_model.logit_scale*image_features @ self.text_features.T
         return similarity
         #raise NotImplementedError("Implement the model_inference function.")
