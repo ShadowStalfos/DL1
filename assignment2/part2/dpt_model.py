@@ -87,7 +87,6 @@ class DeepPromptCLIP(nn.Module):
         # Hint: consider the shape required for the deep prompt to be compatible with the CLIP model
         dtype = torch.float16 if args.device != "cpu" else torch.float32
         self.deep_prompt = nn.Parameter(torch.randn(1, args.prompt_num, self.clip_model.visual.input_resolution, dtype=dtype))
-        print(self.deep_prompt.shape)
 
         # remove this line once you implement the function
         #raise NotImplementedError("Write the code to compute text features.")
@@ -116,7 +115,7 @@ class DeepPromptCLIP(nn.Module):
         # remove this line once you implement the function
         image_features = self.custom_encode_image(image)
         image_features = image_features/image_features.norm(dim=-1, keepdim=True)
-        similarity = self.clip_model.logit_scale*image_features @ self.text_features.T
+        similarity = self.logit_scale*image_features @ self.text_features.T
         return similarity
 
         #######################

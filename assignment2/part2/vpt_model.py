@@ -125,7 +125,7 @@ class VisualPromptCLIP(nn.Module):
         prompt_image = self.prompt_learner.forward(image)
         image_features = self.clip_model.encode_image(prompt_image)
         image_features = image_features/image_features.norm(dim=-1, keepdim=True)
-        similarity = self.clip_model.logit_scale*image_features @ self.text_features.T
+        similarity = self.logit_scale*image_features @ self.text_features.T
         return similarity
         #raise NotImplementedError("Implement the model_inference function.")
 

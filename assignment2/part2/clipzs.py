@@ -217,7 +217,7 @@ class ZeroshotCLIP(nn.Module):
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        similarity = self.clip_model.logit_scale*image_features @ self.text_features.T
+        similarity = self.logit_scale*image_features @ self.text_features.T
         return similarity
         # remove this line once you implement the function
         #raise NotImplementedError("Implement the model_inference function.")
